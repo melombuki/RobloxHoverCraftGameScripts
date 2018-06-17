@@ -3,19 +3,20 @@ local hoverCraft = script.Parent
 local bp = Instance.new("BodyPosition")
 local vs = hoverCraft.VehicleSeat
 local bf = vs.BodyForce
-local bav = vs.BodyAngularVelocity
 local t = hoverCraft.Torque
+local maxTrouqe = 4
 local maxForceXZ = 25
 local maxForceY = 50000
 local airFriction = 0.025
 local zeroVector = Vector3.new(0, 0, 0)
 local thrustSpeed = 10000
+local turnSpeed =  10000
 local steerSpeed = 10000000
 
 bav.AngularVelocity = zeroVector
 hoverCraft.Velocity = zeroVector
 bf.Force = zeroVector
-t.Torque = Vector3.new(0, 5, 0)
+t.Torque = zeroVector
 
 local decay = coroutine.wrap(function()
 	while wait() do
@@ -40,8 +41,7 @@ local function throttle(value)
 end
 
 local function steer(value)
-	--t.Torque = Vector3.new(0, 5, 0)
-	bav.AngularVelocity = Vector3.new(0, -steerSpeed * vs.Steer, 0)
+	t.Torque = Vector3.new(0, -turnSpeed * vs.Steer, 0)
 end
 
 local function onChange(prop)
@@ -54,7 +54,15 @@ local function onChange(prop)
 end
 vs.Changed:connect(onChange)
 
---RunService.Heartbeat:connect(function(step)
---
---end)
+local function clampRotVelocity(currentRotMag)
+	if (currentRotMag >= maxTrouqe) then
+		return (hoverCraft.RotVelocity * maxTrouqe) / currentRotMag
+	else
+		return hoverCraft.RotVelocity
+	end
+end
 
+RunService.Heartbeat:connect(function(step)
+	-- Prevent the hovercraft from turning too fast
+	hoverCraft.RotVelocity = clampRotVelocity(hoverCraft.RotVelocity.Magnitude)
+end)
