@@ -1,5 +1,6 @@
 local RunService = game:GetService('RunService')
 local hoverCraft = script.Parent
+local fireEvent = hoverCraft.FireEvent
 local bp = Instance.new("BodyPosition")
 local vs = hoverCraft.VehicleSeat
 local bf = vs.BodyForce
@@ -13,21 +14,17 @@ local thrustSpeed = 10000
 local turnSpeed =  10000
 local steerSpeed = 10000000
 
-bav.AngularVelocity = zeroVector
 hoverCraft.Velocity = zeroVector
 bf.Force = zeroVector
 t.Torque = zeroVector
 
-local decay = coroutine.wrap(function()
-	while wait() do
-		if hoverCraft.Velocity.Magnitude <= 1 and (vs.Throttle == 0 and vs.Steer == 0) then
-			hoverCraft.Velocity = zeroVector
-		else
-			hoverCraft.Velocity = hoverCraft.Velocity:Lerp(zeroVector, airFriction)
-		end
-	end	
-end)
-decay()
+local function decay()
+	if hoverCraft.Velocity.Magnitude <= 1 and (vs.Throttle == 0 and vs.Steer == 0) then
+		hoverCraft.Velocity = zeroVector
+	else
+		hoverCraft.Velocity = hoverCraft.Velocity:Lerp(zeroVector, airFriction)
+	end
+end	
 
 local function levatate()
 	bp.position = Vector3.new(0, 5, 0)
@@ -65,4 +62,17 @@ end
 RunService.Heartbeat:connect(function(step)
 	-- Prevent the hovercraft from turning too fast
 	hoverCraft.RotVelocity = clampRotVelocity(hoverCraft.RotVelocity.Magnitude)
+	
+	-- Slowly stop all movement
+	decay()
 end)
+
+function onKeyPress(actionName, userInputState, inputObject)
+	if vs.Occupant ~= nil 
+		and userInputState == Enum.UserInputState.Begin
+		and inputObject.KeyCode == Enum.KeyCode.E then
+			fireEvent:Fire(hoverCraft.CFrame.lookVector)
+	end
+end
+
+game.ContextActionService:BindAction("keyPress", onKeyPress, false, Enum.KeyCode.E)
